@@ -1,0 +1,114 @@
+version: "3.8"
+
+services:
+  db:
+    image: postgres:12
+    restart: always
+    healthcheck:
+      test: ["CMD-SHELL", "pg_isready -U ${POSTGRES_USER} -d ${POSTGRES_DB}"]
+      interval: 10s
+      retries: 5
+      start_period: 30s
+      timeout: 10s
+    volumes:
+      - app-db-data:/var/lib/postgresql/data/pgdata
+    environment:
+      - PGDATA=/var/lib/postgresql/data/pgdata
+      - POSTGRES_PASSWORD=changethis
+      - POSTGRES_USER=postgres
+      - POSTGRES_DB=app
+    networks:
+      - default
+
+  adminer:
+    image: adminer
+    restart: always
+    ports:
+      - "8080:8080"  # Expose Adminer sur le port 8080
+    networks:
+      - default
+    depends_on:
+      - db
+    environment:
+      - ADMINER_DESIGN=pepa-linha-dark
+
+  prestart:
+    image: backend
+    networks:
+      - default
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+    command: bash -c "chmod +x scripts/prestart.sh && scripts/prestart.sh"
+    environment:
+      - DOMAIN=localhost
+      - FRONTEND_HOST=http://localhost:5173
+      - ENVIRONMENT=local
+      - BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173
+      - SECRET_KEY=GLhte1DuGv1ciRd2Zfc2kHMqTzLCdNR76yoV9Ae4jBM
+      - FIRST_SUPERUSER=admin@example.com
+      - FIRST_SUPERUSER_PASSWORD=changethis
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_USER=ulrich
+      - SMTP_PASSWORD=suntuto.shop
+      - EMAILS_FROM_EMAIL=info@example.com
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=app
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=changethis
+      - SENTRY_DSN=
+
+  backend:
+    image: backend
+    restart: always
+    networks:
+      - default
+    depends_on:
+      db:
+        condition: service_healthy
+        restart: true
+      prestart:
+        condition: service_completed_successfully
+    environment:
+      - DOMAIN=localhost
+      - FRONTEND_HOST=http://localhost:5173
+      - ENVIRONMENT=local
+      - BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173
+      - SECRET_KEY=GLhte1DuGv1ciRd2Zfc2kHMqTzLCdNR76yoV9Ae4jBM
+      - FIRST_SUPERUSER=admin@example.com
+      - FIRST_SUPERUSER_PASSWORD=changethis
+      - SMTP_HOST=smtp.gmail.com
+      - SMTP_USER=ulrich
+      - SMTP_PASSWORD=suntuto.shop
+      - EMAILS_FROM_EMAIL=info@example.com
+      - POSTGRES_SERVER=db
+      - POSTGRES_PORT=5432
+      - POSTGRES_DB=app
+      - POSTGRES_USER=postgres
+      - POSTGRES_PASSWORD=changethis
+      - SENTRY_DSN=
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
+      interval: 10s
+      timeout: 5s
+      retries: 5
+    ports:
+      - "8000:8000"
+
+  frontend:
+    image: frontend
+    restart: always
+    ports:
+      - "5173:5173"
+    networks:
+      - default
+    environment:
+      - VITE_API_URL=http://localhost:8000
+
+volumes:
+  app-db-data:
+
+networks:
+  default:
