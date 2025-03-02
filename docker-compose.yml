@@ -26,7 +26,7 @@ services:
     restart: always
     networks:
       - traefik-public
-      - default
+      - sun
     depends_on:
       - db
     environment:
@@ -51,7 +51,7 @@ services:
       context: ./backend
     networks:
       - traefik-public
-      - default
+      - sun
     depends_on:
       db:
         condition: service_healthy
@@ -83,7 +83,7 @@ services:
     restart: always
     networks:
       - traefik-public
-      - default
+      - sun
     depends_on:
       db:
         condition: service_healthy
@@ -146,7 +146,7 @@ services:
       - VITE_API_URL=http://backend:8000
     networks:
       - traefik-public
-      - default
+      - sun
     build:
       context: ./frontend
       args:
