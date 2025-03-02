@@ -1,5 +1,4 @@
 services:
-
   db:
     image: postgres:12
     restart: always
@@ -31,6 +30,7 @@ services:
       - db
     environment:
       - ADMINER_DESIGN=pepa-linha-dark
+      - CI=false  # Ajout de la variable CI ici
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public
@@ -45,6 +45,7 @@ services:
       - traefik.http.services.${STACK_NAME?Variable not set}-adminer.loadbalancer.server.port=8080
     ports:
       - "8080:8080"
+
   prestart:
     image: '${DOCKER_IMAGE_BACKEND?Variable not set}:${TAG-latest}'
     build:
@@ -150,10 +151,9 @@ services:
     build:
       context: ./frontend
       args:
-        # - VITE_API_URL=https://api.${DOMAIN?Variable not set}
         - VITE_API_URL=http://backend:8000
         - NODE_ENV=production
-      
+
     labels:
       - traefik.enable=true
       - traefik.docker.network=traefik-public
@@ -174,10 +174,12 @@ services:
     ports:
       - "80:80"
       - "443:443"
+
 volumes:
   app-db-data:
 
 networks:
   traefik-public:
-    # Allow setting it to false for testing
     external: true
+  sun:
+    driver: bridge  # Ajout du réseau "sun"
