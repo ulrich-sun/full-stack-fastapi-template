@@ -14,7 +14,7 @@ services:
       - app-db-data:/var/lib/postgresql/data/pgdata
     environment:
       - PGDATA=/var/lib/postgresql/data/pgdata
-      - POSTGRES_PASSWORD=changethis
+      - POSTGRES_PASSWORD=MonMotDePasseComplexe123!  # Mot de passe sécurisé
       - POSTGRES_USER=postgres
       - POSTGRES_DB=app
     networks:
@@ -33,19 +33,23 @@ services:
       - ADMINER_DESIGN=pepa-linha-dark
 
   prestart:
-    image: backend
+    # image: backend
     networks:
       - default
+    build:
+      context: ./backend
     depends_on:
       db:
         condition: service_healthy
         restart: true
     command: bash -c "chmod +x scripts/prestart.sh && scripts/prestart.sh"
     environment:
-      - DOMAIN=localhost
-      - FRONTEND_HOST=http://localhost:5173
+      - PROJECT_NAME="Full Stack FastAPI Project"
+      - STACK_NAME=full-stack-fastapi-project
+      - DOMAIN=54.145.2.23
+      - FRONTEND_HOST=http://54.145.2.23
       - ENVIRONMENT=local
-      - BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173
+      - BACKEND_CORS_ORIGINS=http://54.145.2.23,http://54.145.2.23:5173
       - SECRET_KEY=GLhte1DuGv1ciRd2Zfc2kHMqTzLCdNR76yoV9Ae4jBM
       - FIRST_SUPERUSER=admin@example.com
       - FIRST_SUPERUSER_PASSWORD=changethis
@@ -57,14 +61,16 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_DB=app
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=changethis
+      - POSTGRES_PASSWORD=MonMotDePasseComplexe123!  # Doit correspondre à celui de `db`
       - SENTRY_DSN=
 
   backend:
-    image: backend
+    # image: backend
     restart: always
     networks:
       - default
+    build:
+      context: ./backend
     depends_on:
       db:
         condition: service_healthy
@@ -72,11 +78,13 @@ services:
       prestart:
         condition: service_completed_successfully
     environment:
-      - DOMAIN=localhost
-      - FRONTEND_HOST=http://localhost:5173
+      - PROJECT_NAME="Full Stack FastAPI Project"
+      - STACK_NAME=full-stack-fastapi-project
+      - DOMAIN=54.145.2.23
+      - FRONTEND_HOST=http://54.145.2.23:5173
       - ENVIRONMENT=local
-      - BACKEND_CORS_ORIGINS=http://localhost,http://localhost:5173
-      - SECRET_KEY=GLhte1DuGv1ciRd2Zfc2kHMqTzLCdNR76yoV9Ae4jBM
+      - BACKEND_CORS_ORIGINS=http://54.145.2.23,http://54.145.2.23:5173
+      - SECRET_KEY=xv7hTRWtCNnufueGNwV0yZ6_1AH4wxGYABGRlYpRxo8
       - FIRST_SUPERUSER=admin@example.com
       - FIRST_SUPERUSER_PASSWORD=changethis
       - SMTP_HOST=smtp.gmail.com
@@ -87,10 +95,10 @@ services:
       - POSTGRES_PORT=5432
       - POSTGRES_DB=app
       - POSTGRES_USER=postgres
-      - POSTGRES_PASSWORD=changethis
+      - POSTGRES_PASSWORD=MonMotDePasseComplexe123!  # Doit correspondre à celui de `db`
       - SENTRY_DSN=
     healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:8000/api/v1/utils/health-check/"]
+      test: ["CMD", "curl", "-f", "http://54.145.2.23:8000/api/v1/utils/health-check/"]
       interval: 10s
       timeout: 5s
       retries: 5
@@ -98,17 +106,27 @@ services:
       - "8000:8000"
 
   frontend:
+    # image: '${DOCKER_IMAGE_FRONTEND?Variable not set}:${TAG-latest}'
     image: frontend
     restart: always
     ports:
-      - "5173:5173"
+      - "5173:80"
     networks:
+      - traefik-public
       - default
+        #build:
+        #context: ./frontend
+        #args:
+        #- VITE_API_URL=http://54.145.2.23:8000
+        #- NODE_ENV=production
     environment:
-      - VITE_API_URL=http://localhost:8000
+      - VITE_API_URL=http://54.145.2.23:8000 # Doit correspondre à `build.args`
+      - NODE_ENV=production
 
 volumes:
   app-db-data:
 
 networks:
   default:
+  traefik-public:
+    external: true
